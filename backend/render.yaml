@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: acuzen-autofill-api
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: ALLOWED_ORIGINS
+        value: https://cjlee-cmd.github.io
+      - key: DB_PATH
+        value: /var/data/mock_cases.db
