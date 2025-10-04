@@ -887,15 +887,26 @@
     }
 
     async function fetchDbRecords() {
-      try {
-        const response = await fetch(`${API_BASE}/api/cases`);
-        if (!response.ok) {
-          throw new Error(await response.text());
+      // GitHub Pages: localStorage 사용, 로컬: API 사용
+      if (!API_BASE || location.hostname.endsWith('github.io')) {
+        try {
+          const stored = localStorage.getItem('acuzen_cases');
+          dbRecords = stored ? JSON.parse(stored) : [];
+        } catch (error) {
+          console.error('Failed to load from localStorage', error);
+          dbRecords = [];
         }
-        dbRecords = await response.json();
-      } catch (error) {
-        console.error('Failed to load DB records', error);
-        dbRecords = [];
+      } else {
+        try {
+          const response = await fetch(`${API_BASE}/api/cases`);
+          if (!response.ok) {
+            throw new Error(await response.text());
+          }
+          dbRecords = await response.json();
+        } catch (error) {
+          console.error('Failed to load DB records', error);
+          dbRecords = [];
+        }
       }
       recordCount.textContent = `${dbRecords.length}건 저장됨`;
       renderDbTable();
@@ -1021,24 +1032,48 @@
       };
 
       try {
-        const response = await fetch(`${API_BASE}/api/cases`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
+        // GitHub Pages: localStorage 저장, 로컬: API 저장
+        if (!API_BASE || location.hostname.endsWith('github.io')) {
+          // localStorage에 저장
+          const stored = localStorage.getItem('acuzen_cases');
+          const cases = stored ? JSON.parse(stored) : [];
+          const existingIndex = cases.findIndex(c => c.case_id === payload.case_id);
 
-        if (!response.ok) {
-          const message = await response.text();
-          throw new Error(message || 'Failed to save');
-        }
+          if (existingIndex >= 0) {
+            cases[existingIndex] = payload;
+          } else {
+            cases.push(payload);
+          }
 
-        status.textContent = `Saved case ${payload.case_id}`;
-        status.style.color = 'var(--yellow-800)';
-        console.log('Saved:', await response.json().catch(() => ({ status: 'saved' })));
-        if (selectedIndex >= 0) {
-          await markRecordSubmitted(selectedIndex);
+          localStorage.setItem('acuzen_cases', JSON.stringify(cases));
+          status.textContent = `Saved case ${payload.case_id}`;
+          status.style.color = 'var(--yellow-800)';
+          console.log('Saved to localStorage:', payload);
+
+          if (selectedIndex >= 0) {
+            await markRecordSubmitted(selectedIndex);
+          }
+        } else {
+          // API를 통해 저장
+          const response = await fetch(`${API_BASE}/api/cases`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            const message = await response.text();
+            throw new Error(message || 'Failed to save');
+          }
+
+          status.textContent = `Saved case ${payload.case_id}`;
+          status.style.color = 'var(--yellow-800)';
+          console.log('Saved:', await response.json().catch(() => ({ status: 'saved' })));
+          if (selectedIndex >= 0) {
+            await markRecordSubmitted(selectedIndex);
+          }
         }
       } catch (error) {
         status.textContent = `Save failed: ${error.message}`;
@@ -1049,12 +1084,18 @@
     window.addEventListener('dragover', (event) => event.preventDefault());
     window.addEventListener('drop', (event) => event.preventDefault());
     (async () => {
-      try {
-        await fetch(`${API_BASE}/api/reset`, { method: 'POST' });
-      } catch (e) {
-        console.warn('DB reset failed (test mode)', e);
-      } finally {
+      // GitHub Pages: localStorage 초기화 스킵, 로컬: API reset
+      if (!API_BASE || location.hostname.endsWith('github.io')) {
+        // GitHub Pages에서는 localStorage 유지 (초기화 안 함)
         await fetchDbRecords();
+      } else {
+        try {
+          await fetch(`${API_BASE}/api/reset`, { method: 'POST' });
+        } catch (e) {
+          console.warn('DB reset failed (test mode)', e);
+        } finally {
+          await fetchDbRecords();
+        }
       }
     })();
 
