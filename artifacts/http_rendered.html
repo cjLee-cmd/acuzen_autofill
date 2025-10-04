@@ -1,0 +1,1493 @@
+<!DOCTYPE html><html lang="ko"><head>
+  <meta charset="UTF-8">
+  <title>증상 자동입력 AI</title>
+  <style>
+    :root {
+      --yellow-50: #fff8db;
+      --yellow-100: #ffeaa7;
+      --yellow-150: #ffe08a;
+      --yellow-200: #ffd860;
+      --yellow-300: #ffc448;
+      --yellow-800: #7a5900;
+      --neutral-950: #1b150f;
+      --neutral-800: #4a3f33;
+      --neutral-600: #6a5b45;
+      --surface: #fffaf0;
+      --border: rgba(122, 89, 0, 0.18);
+      --shadow: rgba(122, 89, 0, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      background: radial-gradient(circle at top left, #fff4c1, var(--surface) 45%, #fff8db);
+      font-family: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--neutral-950);
+      padding: 0;
+    }
+
+    .page {
+      width: 100%;
+      max-width: none;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+      border-radius: 1.75rem;
+      box-shadow: 0 24px 48px var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 1.9rem 2.2rem 1.1rem;
+      background: linear-gradient(130deg, var(--yellow-300), var(--yellow-150));
+      color: var(--neutral-950);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.1rem;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    header p {
+      margin: 0.45rem 0 0;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 0.85rem;
+      color: rgba(27, 21, 15, 0.7);
+    }
+
+    .upload-panel {
+      padding: 1.4rem 2.2rem 1.4rem;
+      background: rgba(255, 250, 240, 0.78);
+      border-bottom: 1px solid rgba(255, 196, 72, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .drop-zone {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1.75rem 2rem;
+      border: 2px dashed rgba(122, 89, 0, 0.25);
+      border-radius: 1.25rem;
+      background: rgba(255, 255, 255, 0.92);
+      cursor: pointer;
+      transition: border 0.2s ease, transform 0.2s ease, background 0.2s ease;
+    }
+
+    .drop-zone::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(255, 216, 96, 0.25), rgba(255, 244, 193, 0.35));
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.is-dragover {
+      border-color: rgba(122, 89, 0, 0.55);
+      transform: translateY(-1px);
+    }
+
+    .drop-zone:hover::before,
+    .drop-zone.is-dragover::before {
+      opacity: 1;
+    }
+
+    .drop-zone.is-loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .drop-zone-icon {
+      width: 3.25rem;
+      height: 3.25rem;
+      border-radius: 1rem;
+      background: linear-gradient(135deg, var(--yellow-100), var(--yellow-200));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      color: var(--yellow-800);
+      flex-shrink: 0;
+    }
+
+    .drop-zone-text strong {
+      font-size: 1.05rem;
+      display: block;
+      color: var(--neutral-950);
+    }
+
+    .drop-zone-text span,
+    .drop-zone-text em {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--neutral-600);
+    }
+
+    .drop-zone-text em {
+      margin-top: 0.35rem;
+      font-style: normal;
+    }
+
+    .upload-status {
+      font-size: 0.95rem;
+      color: var(--neutral-600);
+      transition: color 0.2s ease;
+    }
+
+    .upload-status[data-variant="success"] {
+      color: var(--yellow-800);
+      font-weight: 600;
+    }
+
+    .upload-status[data-variant="error"] {
+      color: #a22121;
+      font-weight: 600;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+      gap: 1.4rem;
+      padding: 1.6rem 2rem 1.8rem;
+      background: rgba(255, 255, 255, 0.86);
+      flex: 1;
+    }
+
+    .form-panel,
+    .preview-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    form {
+      background: rgba(255, 255, 255, 0.94);
+      border-radius: 1.25rem;
+      padding: 1.6rem;
+      box-shadow: inset 0 0 0 1px rgba(122, 89, 0, 0.08);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.8rem 1.1rem;
+      height: 100%;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--neutral-800);
+      gap: 0.3rem;
+    }
+
+    .full-span {
+      grid-column: 1 / -1;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.68rem 0.8rem;
+      border-radius: 0.85rem;
+      border: 1px solid var(--border);
+      background: #fffdf5;
+      font-size: 0.95rem;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+      color: var(--neutral-950);
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--yellow-200);
+      box-shadow: 0 0 0 4px rgba(255, 212, 102, 0.38);
+    }
+
+    textarea {
+      min-height: 6rem;
+      resize: vertical;
+    }
+
+    .checkbox-field {
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .checkbox-field input {
+      width: auto;
+      margin: 0;
+      accent-color: var(--yellow-300);
+    }
+
+    button[type="submit"] {
+      grid-column: 1 / -1;
+      margin-top: 0.4rem;
+      padding: 0.95rem 1.2rem;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, var(--yellow-100), var(--yellow-300));
+      color: var(--neutral-950);
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button[type="submit"]:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(122, 89, 0, 0.2);
+    }
+
+    button[type="submit"]:active {
+      transform: translateY(1px);
+    }
+
+    .status {
+      margin-top: 1.2rem;
+      font-weight: 700;
+      color: var(--yellow-800);
+      background-color: rgba(255, 236, 179, 0.4);
+      border-radius: 0.9rem;
+      padding: 0.85rem 1rem;
+      box-shadow: inset 0 0 0 1px rgba(255, 196, 72, 0.35);
+    }
+
+    .preview-panel {
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 1.25rem;
+      box-shadow: inset 0 0 0 1px rgba(122, 89, 0, 0.08);
+      padding: 1.5rem 1.8rem;
+      gap: 0.9rem;
+      max-height: 100%;
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+    }
+
+    .preview-header h2 {
+      margin: 0;
+      font-size: 1.35rem;
+      letter-spacing: -0.01em;
+      color: var(--neutral-950);
+    }
+
+    .preview-meta {
+      font-size: 0.95rem;
+      color: var(--neutral-600);
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .preview-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .progress-panel {
+      margin-top: 1.2rem;
+      display: grid;
+      gap: 0.6rem;
+      background: rgba(255, 236, 179, 0.35);
+      border-radius: 0.9rem;
+      padding: 0.85rem 1rem 1rem;
+      box-shadow: inset 0 0 0 1px rgba(255, 196, 72, 0.28);
+    }
+
+    .progress-panel header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      color: var(--neutral-800);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 0.6rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.6);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar span {
+      position: absolute;
+      inset: 0;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(135deg, var(--yellow-100), var(--yellow-300));
+      transition: width 0.3s ease;
+    }
+
+    .table-wrapper {
+      border-radius: 1rem;
+      overflow-x: hidden;
+      box-shadow: inset 0 0 0 1px rgba(122, 89, 0, 0.08);
+      background: #fffef8;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.9rem;
+    }
+
+    thead {
+      background: rgba(255, 221, 130, 0.45);
+      color: var(--neutral-950);
+    }
+
+    th,
+    td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(122, 89, 0, 0.08);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr {
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    tbody tr:hover {
+      background: rgba(255, 240, 180, 0.35);
+    }
+
+    .record-row.is-selected {
+      background: rgba(255, 221, 130, 0.45);
+    }
+
+    .record-row.is-saved {
+      position: relative;
+    }
+
+    .record-row.is-saved::after {
+      content: "저장됨";
+      position: absolute;
+      right: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(122, 89, 0, 0.14);
+      color: var(--yellow-800);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+    }
+
+    .record-empty td {
+      text-align: center;
+      color: var(--neutral-600);
+      padding: 1.9rem 1rem;
+      font-style: italic;
+    }
+
+    @media (max-width: 960px) {
+      body {
+        padding: 2rem 1rem;
+      }
+
+      header,
+      .upload-panel {
+        padding: 2rem 1.6rem;
+      }
+
+      .workspace {
+        padding: 1.8rem 1.6rem 2rem;
+        grid-template-columns: 1fr;
+      }
+
+      form {
+        padding: 1.8rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .preview-panel {
+        padding: 1.8rem;
+      }
+    }
+
+    @media (max-width: 720px) {
+      header,
+      .upload-panel {
+        padding: 1.6rem 1.2rem;
+      }
+
+      .workspace {
+        padding: 1.4rem 1.2rem 1.6rem;
+      }
+
+      form {
+        grid-template-columns: 1fr;
+      }
+
+      .preview-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>증상 자동입력 AI</h1>
+      <p>Acuzen | KR</p>
+    </header>
+    <section class="upload-panel">
+      <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="파일 업로드">
+        <div class="drop-zone-icon">📄</div>
+        <div class="drop-zone-text">
+          <strong>Excel 또는 CSV 파일을 드래그 앤 드롭하거나 클릭하여 선택하세요.</strong>
+          <span>첫 200건까지 미리보기 후 케이스를 선택해 자동 입력할 수 있습니다.</span>
+          <em>지원 형식: .xlsx, .xls, .csv</em>
+        </div>
+        <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" hidden="">
+      </div>
+      <div class="upload-status" id="uploadStatus" data-variant="info"></div>
+    </section>
+    <main class="workspace">
+      <section class="form-panel">
+        <form id="caseForm">
+          <label>Case ID <input id="caseId" required=""></label>
+          <label>Reported Term <input name="reportedTerm" required=""></label>
+          <label>MedDRA Level
+            <select id="meddraLevel">
+              <option value="LLT">LLT</option>
+              <option value="PT">PT</option>
+            </select>
+          </label>
+          <label>MedDRA Text <input name="meddraText"></label>
+          <label>MedDRA Code <input name="meddraCode"></label>
+          <label>MedDRA Version <input name="meddraVersion" value="MOCK-1.0"></label>
+          <label>Onset Date <input name="onsetDate" type="date"></label>
+          <label class="checkbox-field"><input name="serious" type="checkbox"> Serious</label>
+          <label>Suspect Drug <input name="suspectDrug"></label>
+          <label>Dose <input name="dose"></label>
+          <label>Outcome
+            <select id="outcome">
+              <option value="Recovered">Recovered</option>
+              <option value="Recovering">Recovering</option>
+              <option value="Not recovered">Not recovered</option>
+              <option value="Unknown">Unknown</option>
+              <option value="Fatal">Fatal</option>
+            </select>
+          </label>
+          <label class="full-span">Narrative <textarea id="narrative" name="narrative"></textarea></label>
+          <button type="submit">증상 저장하기</button>
+        </form>
+        <div id="status" class="status" hidden="">Saved!</div>
+      </section>
+      <section class="preview-panel">
+        <div class="preview-header">
+          <h2>저장된 케이스</h2>
+          <div class="preview-meta">
+            <span id="fileName">파일 없음</span>
+            <span>|</span>
+            <span id="recordCount">100건 저장됨</span>
+          </div>
+        </div>
+        <div class="progress-panel" id="progressPanel" hidden="">
+          <header>
+            <span>진행 상황</span>
+            <strong id="progressLabel">0 / 0</strong>
+          </header>
+          <div class="progress-bar"><span id="progressFill"></span></div>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Case ID</th>
+                <th>Reported Term</th>
+                <th>MedDRA Code</th>
+                <th>Outcome</th>
+                <th>Seriousness</th>
+              </tr>
+            </thead>
+            <tbody id="recordList"><tr class="record-row is-saved">
+          <td>CAS-2025-0001</td>
+          <td>Hyperglycemia</td>
+          <td>PT_45700</td>
+          <td>Recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0002</td>
+          <td>Rash</td>
+          <td>PT_29364</td>
+          <td>Recovering</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0003</td>
+          <td>Palpitations</td>
+          <td>PT_68343</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0004</td>
+          <td>Neutropenia</td>
+          <td>PT_10966</td>
+          <td>Recovering</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0005</td>
+          <td>Anxiety</td>
+          <td>PT_84439</td>
+          <td>Not recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0006</td>
+          <td>Hypotension</td>
+          <td>PT_14781</td>
+          <td>Not recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0007</td>
+          <td>Abdominal pain</td>
+          <td>PT_45371</td>
+          <td>Recovering</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0008</td>
+          <td>Erythema</td>
+          <td>PT_32551</td>
+          <td>Not recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0009</td>
+          <td>Chest pain</td>
+          <td>PT_37637</td>
+          <td>Recovering</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0010</td>
+          <td>Chest pain</td>
+          <td>PT_37637</td>
+          <td>Not recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0011</td>
+          <td>Hypokalemia</td>
+          <td>PT_35271</td>
+          <td>Recovering</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0012</td>
+          <td>Medication error</td>
+          <td>PT_70617</td>
+          <td>Not recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0013</td>
+          <td>Anaphylactic reaction</td>
+          <td>PT_78461</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0014</td>
+          <td>Insomnia</td>
+          <td>PT_78884</td>
+          <td>Recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0015</td>
+          <td>Abdominal pain</td>
+          <td>PT_45371</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0016</td>
+          <td>Pneumonia</td>
+          <td>PT_99901</td>
+          <td>Not recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0017</td>
+          <td>Asthenia</td>
+          <td>PT_52361</td>
+          <td>Not recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0018</td>
+          <td>Product quality issue</td>
+          <td>PT_75272</td>
+          <td>Recovering</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0019</td>
+          <td>Headache</td>
+          <td>PT_14075</td>
+          <td>Recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0020</td>
+          <td>Depression</td>
+          <td>PT_30448</td>
+          <td>Unknown</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0021</td>
+          <td>Drug interaction</td>
+          <td>PT_32242</td>
+          <td>Recovering</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0022</td>
+          <td>Ligament sprain</td>
+          <td>PT_83699</td>
+          <td>Not recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0023</td>
+          <td>Hypotension</td>
+          <td>PT_14781</td>
+          <td>Recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0024</td>
+          <td>Gingival bleeding</td>
+          <td>PT_54137</td>
+          <td>Recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0025</td>
+          <td>Tinnitus</td>
+          <td>PT_74119</td>
+          <td>Recovering</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0026</td>
+          <td>Pneumonia</td>
+          <td>PT_99901</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0027</td>
+          <td>Drug interaction</td>
+          <td>PT_32242</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0028</td>
+          <td>Off label use</td>
+          <td>PT_18413</td>
+          <td>Unknown</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0029</td>
+          <td>Dermatitis</td>
+          <td>PT_75672</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0030</td>
+          <td>Urinary retention</td>
+          <td>PT_26955</td>
+          <td>Recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0031</td>
+          <td>Agitation</td>
+          <td>PT_80003</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0032</td>
+          <td>Paresthesia</td>
+          <td>PT_35525</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0033</td>
+          <td>Kidney failure</td>
+          <td>PT_38021</td>
+          <td>Recovering</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0034</td>
+          <td>Ligament sprain</td>
+          <td>PT_83699</td>
+          <td>Not recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0035</td>
+          <td>Pain in extremity</td>
+          <td>PT_56412</td>
+          <td>Recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0036</td>
+          <td>Therapeutic response unexpected</td>
+          <td>PT_80090</td>
+          <td>Recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0037</td>
+          <td>Hyperthermia</td>
+          <td>PT_75750</td>
+          <td>Not recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0038</td>
+          <td>Anaphylactic reaction</td>
+          <td>PT_78461</td>
+          <td>Not recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0039</td>
+          <td>Hyperthermia</td>
+          <td>PT_75750</td>
+          <td>Recovering</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0040</td>
+          <td>Epistaxis</td>
+          <td>PT_25494</td>
+          <td>Recovering</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0041</td>
+          <td>Off label use</td>
+          <td>PT_18413</td>
+          <td>Not recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0042</td>
+          <td>Back pain</td>
+          <td>PT_92908</td>
+          <td>Not recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0043</td>
+          <td>Dose omission</td>
+          <td>PT_27299</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0044</td>
+          <td>Pruritus</td>
+          <td>PT_65399</td>
+          <td>Recovering</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0045</td>
+          <td>Liver disorder</td>
+          <td>PT_40981</td>
+          <td>Recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0046</td>
+          <td>Rash</td>
+          <td>PT_29364</td>
+          <td>Recovering</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0047</td>
+          <td>Pruritus</td>
+          <td>PT_65399</td>
+          <td>Recovering</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0048</td>
+          <td>Hyperthermia</td>
+          <td>PT_75750</td>
+          <td>Recovering</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0049</td>
+          <td>Dry mouth</td>
+          <td>PT_14243</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0050</td>
+          <td>Back pain</td>
+          <td>PT_92908</td>
+          <td>Recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0051</td>
+          <td>Hepatic enzyme increased</td>
+          <td>PT_92180</td>
+          <td>Recovering</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0052</td>
+          <td>Tinnitus</td>
+          <td>PT_74119</td>
+          <td>Recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0053</td>
+          <td>Therapeutic response unexpected</td>
+          <td>PT_80090</td>
+          <td>Recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0054</td>
+          <td>Rash</td>
+          <td>PT_29364</td>
+          <td>Unknown</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0055</td>
+          <td>Hypertension</td>
+          <td>PT_68106</td>
+          <td>Recovering</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0056</td>
+          <td>Night sweats</td>
+          <td>PT_65122</td>
+          <td>Unknown</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0057</td>
+          <td>Hypotension</td>
+          <td>PT_14781</td>
+          <td>Not recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0058</td>
+          <td>Somnolence</td>
+          <td>PT_25974</td>
+          <td>Unknown</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0059</td>
+          <td>Oral pain</td>
+          <td>PT_61870</td>
+          <td>Recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0060</td>
+          <td>Gastroesophageal reflux disease</td>
+          <td>PT_19150</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0061</td>
+          <td>Pyrexia</td>
+          <td>PT_40792</td>
+          <td>Not recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0062</td>
+          <td>Palpitations</td>
+          <td>PT_68343</td>
+          <td>Recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0063</td>
+          <td>Leukopenia</td>
+          <td>PT_32385</td>
+          <td>Unknown</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0064</td>
+          <td>Overdose</td>
+          <td>PT_95168</td>
+          <td>Recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0065</td>
+          <td>Night sweats</td>
+          <td>PT_65122</td>
+          <td>Recovering</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0066</td>
+          <td>Drug ineffective</td>
+          <td>PT_45896</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0067</td>
+          <td>Asthenia</td>
+          <td>PT_52361</td>
+          <td>Not recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0068</td>
+          <td>Agitation</td>
+          <td>PT_80003</td>
+          <td>Unknown</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0069</td>
+          <td>Blurred vision</td>
+          <td>PT_45923</td>
+          <td>Recovering</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0070</td>
+          <td>Peripheral edema</td>
+          <td>PT_49313</td>
+          <td>Unknown</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0071</td>
+          <td>Oropharyngeal pain</td>
+          <td>PT_37503</td>
+          <td>Recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0072</td>
+          <td>Syncope</td>
+          <td>PT_53934</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0073</td>
+          <td>Hyperglycemia</td>
+          <td>PT_45700</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0074</td>
+          <td>Pyrexia</td>
+          <td>PT_40792</td>
+          <td>Recovering</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0075</td>
+          <td>Oral pain</td>
+          <td>PT_61870</td>
+          <td>Unknown</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0076</td>
+          <td>Erythema</td>
+          <td>PT_32551</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0077</td>
+          <td>Urticaria</td>
+          <td>PT_29710</td>
+          <td>Recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0078</td>
+          <td>Off label use</td>
+          <td>PT_18413</td>
+          <td>Recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0079</td>
+          <td>Hyperthermia</td>
+          <td>PT_75750</td>
+          <td>Recovering</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0080</td>
+          <td>Exposure during pregnancy</td>
+          <td>PT_46469</td>
+          <td>Not recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0081</td>
+          <td>Toothache</td>
+          <td>PT_57399</td>
+          <td>Not recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0082</td>
+          <td>Gingival bleeding</td>
+          <td>PT_54137</td>
+          <td>Not recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0083</td>
+          <td>Gait disturbance</td>
+          <td>PT_14211</td>
+          <td>Not recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0084</td>
+          <td>Leukopenia</td>
+          <td>PT_32385</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0085</td>
+          <td>Arthralgia</td>
+          <td>PT_92436</td>
+          <td>Not recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0086</td>
+          <td>COVID-19</td>
+          <td>PT_33349</td>
+          <td>Recovering</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0087</td>
+          <td>Chills</td>
+          <td>PT_52461</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0088</td>
+          <td>Agitation</td>
+          <td>PT_80003</td>
+          <td>Not recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0089</td>
+          <td>Nausea</td>
+          <td>PT_66499</td>
+          <td>Recovering</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0090</td>
+          <td>Overdose</td>
+          <td>PT_95168</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0091</td>
+          <td>Hypokalemia</td>
+          <td>PT_35271</td>
+          <td>Not recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0092</td>
+          <td>Injection site erythema</td>
+          <td>PT_48382</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0093</td>
+          <td>Pneumonia</td>
+          <td>PT_99901</td>
+          <td>Recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0094</td>
+          <td>Peripheral edema</td>
+          <td>PT_49313</td>
+          <td>Not recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0095</td>
+          <td>Dry mouth</td>
+          <td>PT_14243</td>
+          <td>Recovering</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0096</td>
+          <td>Exposure during pregnancy</td>
+          <td>PT_46469</td>
+          <td>Unknown</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0097</td>
+          <td>Hypersensitivity</td>
+          <td>PT_66324</td>
+          <td>Recovering</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0098</td>
+          <td>Abdominal pain</td>
+          <td>PT_45371</td>
+          <td>Recovered</td>
+          <td>Serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0099</td>
+          <td>Syncope</td>
+          <td>PT_53934</td>
+          <td>Recovered</td>
+          <td>Non-serious</td>
+        </tr><tr class="record-row is-saved">
+          <td>CAS-2025-0100</td>
+          <td>Hyperglycemia</td>
+          <td>PT_45700</td>
+          <td>Unknown</td>
+          <td>Serious</td>
+        </tr></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const form = document.getElementById('caseForm');
+    const status = document.getElementById('status');
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const recordList = document.getElementById('recordList');
+    const recordCount = document.getElementById('recordCount');
+    const fileNameDisplay = document.getElementById('fileName');
+    let lastSavedCaseId = null;
+    const progressPanel = document.getElementById('progressPanel');
+    const progressLabel = document.getElementById('progressLabel');
+    const progressFill = document.getElementById('progressFill');
+
+    const FIELD_MAPPING = {
+      case_id: '#caseId',
+      reaction_reported_term: 'input[name="reportedTerm"]',
+      meddra_level: '#meddraLevel',
+      meddra_term_text: 'input[name="meddraText"]',
+      meddra_code: 'input[name="meddraCode"]',
+      meddra_version: 'input[name="meddraVersion"]',
+      onset_date: 'input[name="onsetDate"]',
+      seriousness: 'input[name="serious"]',
+      suspect_drug: 'input[name="suspectDrug"]',
+      dose_text: 'input[name="dose"]',
+      outcome: '#outcome',
+      narrative: '#narrative',
+    };
+
+    let uploadedRecords = [];
+    let selectedIndex = -1;
+    let dbRecords = [];
+
+    function setUploadStatus(text, variant = 'info') {
+      uploadStatus.textContent = text;
+      uploadStatus.dataset.variant = variant;
+    }
+
+    function updateProgressBar() {
+      const total = uploadedRecords.length;
+      const saved = uploadedRecords.filter((record) => record._saved).length;
+      if (!total) {
+        progressPanel.hidden = true;
+        progressFill.style.width = '0%';
+        progressLabel.textContent = '0 / 0';
+        return;
+      }
+      progressPanel.hidden = false;
+      progressLabel.textContent = `${saved} / ${total}`;
+      const percent = Math.round((saved / total) * 100);
+      progressFill.style.width = `${percent}%`;
+    }
+
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('파일을 읽을 수 없습니다.'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleFile(file) {
+      if (!file) {
+        return;
+      }
+      dropZone.classList.add('is-loading');
+      setUploadStatus(`${file.name} 업로드 중...`);
+      try {
+        const base64 = await readFileAsBase64(file);
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ filename: file.name, content: base64 }),
+        });
+
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || '업로드 실패');
+        }
+
+        const data = await response.json();
+        uploadedRecords = (data.records || []).map((record) => ({ ...record, _saved: false }));
+        selectedIndex = uploadedRecords.length ? 0 : -1;
+        recordCount.textContent = `${uploadedRecords.length}건`;
+        fileNameDisplay.textContent = data.filename || file.name;
+        updateProgressBar();
+
+        if (uploadedRecords.length) {
+          setUploadStatus(`${data.filename || file.name}에서 ${uploadedRecords.length}건을 불러왔습니다.`, 'success');
+          selectRecord(0);
+        } else {
+          setUploadStatus('파일에서 케이스를 찾을 수 없습니다.', 'info');
+          clearForm();
+          updateProgressBar();
+        }
+      } catch (error) {
+        console.error(error);
+        setUploadStatus(`업로드 실패: ${error.message}`, 'error');
+        uploadedRecords = [];
+        selectedIndex = -1;
+        recordCount.textContent = '0건';
+        fileNameDisplay.textContent = '파일 없음';
+        clearForm();
+        updateProgressBar();
+      } finally {
+        await fetchDbRecords();
+        dropZone.classList.remove('is-loading');
+        dropZone.classList.remove('is-dragover');
+        fileInput.value = '';
+      }
+    }
+
+    function renderDbTable() {
+      recordList.innerHTML = '';
+      if (!dbRecords.length) {
+        const row = document.createElement('tr');
+        row.className = 'record-empty';
+        row.innerHTML = '<td colspan="5">저장된 케이스가 없습니다.</td>';
+        recordList.appendChild(row);
+        return;
+      }
+
+      dbRecords.forEach((record) => {
+        const row = document.createElement('tr');
+        row.className = 'record-row is-saved';
+        if (record.case_id === lastSavedCaseId) {
+          row.classList.add('is-selected');
+        }
+        row.innerHTML = `
+          <td>${record.case_id || '-'}</td>
+          <td>${record.reaction_reported_term || '-'}</td>
+          <td>${record.meddra_code || '-'}</td>
+          <td>${record.outcome || '-'}</td>
+          <td>${record.seriousness || '-'}</td>
+        `;
+        recordList.appendChild(row);
+      });
+    }
+
+    function updateRowSelection() {}
+
+    function ensureSelectOption(select, value) {
+      if (!value) {
+        return;
+      }
+      const exists = Array.from(select.options).some(
+        (option) => option.value === value || option.label === value
+      );
+      if (!exists) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        select.appendChild(option);
+      }
+      select.value = value;
+    }
+
+    function populateForm(record) {
+      if (!record) {
+        return;
+      }
+      Object.entries(FIELD_MAPPING).forEach(([field, selector]) => {
+        const element = document.querySelector(selector);
+        if (!element) {
+          return;
+        }
+        const value = record[field] ?? '';
+        if (selector === 'input[name="serious"]') {
+          element.checked = String(value).toLowerCase().startsWith('serious');
+          return;
+        }
+        if (element.tagName === 'SELECT') {
+          ensureSelectOption(element, value);
+          return;
+        }
+        if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+          element.value = value || '';
+        }
+      });
+      status.hidden = false;
+      status.textContent = `${record.case_id || '선택된 케이스'} 로드 완료`; 
+      status.style.color = 'var(--yellow-800)';
+    }
+
+    function clearForm() {
+      Object.values(FIELD_MAPPING).forEach((selector) => {
+        const element = document.querySelector(selector);
+        if (!element) {
+          return;
+        }
+        if (selector === 'input[name="serious"]') {
+          element.checked = false;
+          return;
+        }
+        if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+          element.value = '';
+        }
+        if (element instanceof HTMLSelectElement) {
+          element.selectedIndex = 0;
+        }
+      });
+      status.hidden = true;
+    }
+
+    function selectRecord(index) {
+      if (index < 0 || index >= uploadedRecords.length) {
+        return;
+      }
+      selectedIndex = index;
+      populateForm(uploadedRecords[index]);
+      updateRowSelection();
+    }
+
+    async function fetchDbRecords() {
+      try {
+        const response = await fetch('/api/cases');
+        if (!response.ok) {
+          throw new Error(await response.text());
+        }
+        dbRecords = await response.json();
+      } catch (error) {
+        console.error('Failed to load DB records', error);
+        dbRecords = [];
+      }
+      recordCount.textContent = `${dbRecords.length}건 저장됨`;
+      renderDbTable();
+    }
+
+    function selectNextRecord(currentIndex) {
+      const nextByOrder = uploadedRecords.findIndex((record, idx) => !record._saved && idx > currentIndex);
+      if (nextByOrder !== -1) {
+        selectRecord(nextByOrder);
+        return;
+      }
+      const firstPending = uploadedRecords.findIndex((record) => !record._saved);
+      if (firstPending !== -1) {
+        selectRecord(firstPending);
+      }
+    }
+
+    async function markRecordSubmitted(index) {
+      if (index < 0 || index >= uploadedRecords.length) {
+        return;
+      }
+      const record = uploadedRecords[index];
+      record._saved = true;
+      lastSavedCaseId = record.case_id || null;
+      updateRowSelection();
+      updateProgressBar();
+      await fetchDbRecords();
+      selectNextRecord(index);
+    }
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      dropZone.classList.add('is-dragover');
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('is-dragover');
+    });
+    dropZone.addEventListener('drop', (event) => {
+      event.preventDefault();
+      dropZone.classList.remove('is-dragover');
+      const files = event.dataTransfer?.files;
+      if (files && files.length) {
+        handleFile(files[0]);
+      }
+    });
+    fileInput.addEventListener('change', (event) => {
+      const target = event.target;
+      if (target.files && target.files.length) {
+        handleFile(target.files[0]);
+      }
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      status.hidden = false;
+      status.textContent = 'Saving...';
+      status.style.color = 'var(--yellow-800)';
+
+      const formData = new FormData(form);
+      const rawPayload = Object.fromEntries(formData.entries());
+      rawPayload.case_id = document.getElementById('caseId').value;
+      rawPayload.meddraLevel = document.getElementById('meddraLevel').value;
+      rawPayload.outcome = document.getElementById('outcome').value;
+      rawPayload.serious = form.elements['serious'].checked;
+
+      const payload = {
+        case_id: rawPayload.case_id,
+        reaction_reported_term: rawPayload.reportedTerm || '',
+        meddra_level: rawPayload.meddraLevel || 'LLT',
+        meddra_term_text: rawPayload.meddraText || '',
+        meddra_code: rawPayload.meddraCode || '',
+        meddra_version: rawPayload.meddraVersion || '',
+        onset_date: rawPayload.onsetDate || '',
+        seriousness: rawPayload.serious ? 'Serious' : 'Non-serious',
+        suspect_drug: rawPayload.suspectDrug || '',
+        dose_text: rawPayload.dose || '',
+        outcome: rawPayload.outcome || '',
+        narrative: rawPayload.narrative || '',
+        raw_payload: rawPayload,
+      };
+
+      try {
+        const response = await fetch('/api/cases', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || 'Failed to save');
+        }
+
+        status.textContent = `Saved case ${payload.case_id}`;
+        status.style.color = 'var(--yellow-800)';
+        console.log('Saved:', await response.json().catch(() => ({ status: 'saved' })));
+        if (selectedIndex >= 0) {
+          await markRecordSubmitted(selectedIndex);
+        }
+      } catch (error) {
+        status.textContent = `Save failed: ${error.message}`;
+        status.style.color = '#a22121';
+      }
+    });
+
+    window.addEventListener('dragover', (event) => event.preventDefault());
+    window.addEventListener('drop', (event) => event.preventDefault());
+    fetchDbRecords();
+  </script>
+
+
+</body></html>
