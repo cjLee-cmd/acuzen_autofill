@@ -581,6 +581,20 @@
   </div>
 
   <script>
+    // --- API base selection (for GitHub Pages vs local server) -------------
+    const API_BASE = (() => {
+      try {
+        const url = new URL(window.location.href);
+        const param = url.searchParams.get('api');
+        if (param) return String(param).replace(/\/$/, '');
+      } catch (e) {}
+      if (window.API_BASE) return String(window.API_BASE).replace(/\/$/, '');
+      if (location.hostname.endsWith('github.io')) {
+        // Set your deployed API host here or pass via ?api= query param
+        return '';
+      }
+      return '';
+    })();
     const form = document.getElementById('caseForm');
     const status = document.getElementById('status');
     const dropZone = document.getElementById('dropZone');
@@ -651,7 +665,7 @@
       setUploadStatus(`${file.name} 업로드 중...`);
       try {
         const base64 = await readFileAsBase64(file);
-        const response = await fetch('/api/upload', {
+        const response = await fetch(`${API_BASE}/api/upload`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -801,7 +815,7 @@
 
     async function fetchDbRecords() {
       try {
-        const response = await fetch('/api/cases');
+        const response = await fetch(`${API_BASE}/api/cases`);
         if (!response.ok) {
           throw new Error(await response.text());
         }
@@ -934,7 +948,7 @@
       };
 
       try {
-        const response = await fetch('/api/cases', {
+        const response = await fetch(`${API_BASE}/api/cases`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -963,7 +977,7 @@
     window.addEventListener('drop', (event) => event.preventDefault());
     (async () => {
       try {
-        await fetch('/api/reset', { method: 'POST' });
+        await fetch(`${API_BASE}/api/reset`, { method: 'POST' });
       } catch (e) {
         console.warn('DB reset failed (test mode)', e);
       } finally {

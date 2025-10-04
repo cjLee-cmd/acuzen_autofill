@@ -80,6 +80,14 @@ class CaseRequestHandler(SimpleHTTPRequestHandler):
             return
         self.send_error(HTTPStatus.NOT_FOUND, "Unsupported endpoint")
 
+    def do_OPTIONS(self) -> None:  # noqa: N802 - CORS preflight
+        if self.path.startswith("/api/"):
+            self.send_response(HTTPStatus.NO_CONTENT)
+            self._write_cors()
+            self.end_headers()
+            return
+        super().do_OPTIONS()
+
     # --- helpers ---------------------------------------------------------
 
     def _handle_create_case(self) -> None:
@@ -134,6 +142,7 @@ class CaseRequestHandler(SimpleHTTPRequestHandler):
             return
 
         self.send_response(HTTPStatus.CREATED)
+        self._write_cors()
         self.send_header("Content-Type", "application/json")
         self.end_headers()
         self.wfile.write(json.dumps({"status": "saved"}).encode("utf-8"))
@@ -144,6 +153,7 @@ class CaseRequestHandler(SimpleHTTPRequestHandler):
             rows = conn.execute("SELECT * FROM cases ORDER BY case_id").fetchall()
         data = [dict(row) for row in rows]
         self.send_response(HTTPStatus.OK)
+        self._write_cors()
         self.send_header("Content-Type", "application/json")
         self.end_headers()
         self.wfile.write(json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8"))
@@ -203,6 +213,7 @@ class CaseRequestHandler(SimpleHTTPRequestHandler):
             "records": payload_records[:200],
         }
         self.send_response(HTTPStatus.OK)
+        self._write_cors()
         self.send_header("Content-Type", "application/json")
         self.end_headers()
         self.wfile.write(json.dumps(response, ensure_ascii=False).encode("utf-8"))
@@ -234,9 +245,20 @@ class CaseRequestHandler(SimpleHTTPRequestHandler):
             self.send_error(HTTPStatus.INTERNAL_SERVER_ERROR, f"DB reset error: {exc}")
             return
         self.send_response(HTTPStatus.OK)
+        self._write_cors()
         self.send_header("Content-Type", "application/json")
         self.end_headers()
         self.wfile.write(json.dumps({"status": "reset"}).encode("utf-8"))
+
+    # --- CORS helper ------------------------------------------------------
+    def _write_cors(self) -> None:
+        # Open CORS for demo/testing so that GitHub Pages UI can call the API
+        origin = self.headers.get("Origin") or "*"
+        # For safety in demo, allow any origin. Adjust for production accordingly.
+        self.send_header("Access-Control-Allow-Origin", "*" if origin is None else origin)
+        self.send_header("Vary", "Origin")
+        self.send_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
     def _normalise_payload(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         raw_payload = payload.get("raw_payload", payload)
