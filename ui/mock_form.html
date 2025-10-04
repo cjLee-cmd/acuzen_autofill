@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>증상 자동입력 AI</title>
+  <style>
+    :root {
+      --yellow-50: #fff8db;
+      --yellow-100: #ffeaa7;
+      --yellow-150: #ffe08a;
+      --yellow-200: #ffd860;
+      --yellow-300: #ffc448;
+      --yellow-800: #7a5900;
+      --neutral-950: #1b150f;
+      --neutral-800: #4a3f33;
+      --neutral-600: #6a5b45;
+      --surface: #fffaf0;
+      --border: rgba(122, 89, 0, 0.18);
+      --shadow: rgba(122, 89, 0, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      background: radial-gradient(circle at top left, #fff4c1, var(--surface) 45%, #fff8db);
+      font-family: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--neutral-950);
+      padding: 0;
+    }
+
+    .page {
+      width: 100%;
+      max-width: none;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+      border-radius: 1.75rem;
+      box-shadow: 0 24px 48px var(--shadow);
+      overflow: hidden;
+      height: 100vh; /* ensure viewport-bounded layout */
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 1.9rem 2.2rem 1.1rem;
+      background: linear-gradient(130deg, var(--yellow-300), var(--yellow-150));
+      color: var(--neutral-950);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.1rem;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    header p {
+      margin: 0.45rem 0 0;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 0.85rem;
+      color: rgba(27, 21, 15, 0.7);
+    }
+
+    .upload-panel {
+      padding: 1.4rem 2.2rem 1.4rem;
+      background: rgba(255, 250, 240, 0.78);
+      border-bottom: 1px solid rgba(255, 196, 72, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .upload-row { display: flex; gap: 0.8rem; align-items: stretch; }
+    .upload-row .drop-zone { flex: 1 1 auto; }
+    .auto-fill-btn {
+      padding: 0.9rem 1.1rem;
+      border-radius: 0.9rem;
+      border: none;
+      background: linear-gradient(135deg, var(--yellow-100), var(--yellow-300));
+      color: var(--neutral-950);
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      min-width: 8.5rem;
+    }
+    .auto-fill-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(122,89,0,.18); }
+    .auto-fill-btn:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; transform: none; }
+
+    .drop-zone {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1.75rem 2rem;
+      border: 2px dashed rgba(122, 89, 0, 0.25);
+      border-radius: 1.25rem;
+      background: rgba(255, 255, 255, 0.92);
+      cursor: pointer;
+      transition: border 0.2s ease, transform 0.2s ease, background 0.2s ease;
+    }
+
+    .drop-zone::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(255, 216, 96, 0.25), rgba(255, 244, 193, 0.35));
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.is-dragover {
+      border-color: rgba(122, 89, 0, 0.55);
+      transform: translateY(-1px);
+    }
+
+    .drop-zone:hover::before,
+    .drop-zone.is-dragover::before {
+      opacity: 1;
+    }
+
+    .drop-zone.is-loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .drop-zone-icon {
+      width: 3.25rem;
+      height: 3.25rem;
+      border-radius: 1rem;
+      background: linear-gradient(135deg, var(--yellow-100), var(--yellow-200));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      color: var(--yellow-800);
+      flex-shrink: 0;
+    }
+
+    .drop-zone-text strong {
+      font-size: 1.05rem;
+      display: block;
+      color: var(--neutral-950);
+    }
+
+    .drop-zone-text span,
+    .drop-zone-text em {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--neutral-600);
+    }
+
+    .drop-zone-text em {
+      margin-top: 0.35rem;
+      font-style: normal;
+    }
+
+    .upload-status {
+      font-size: 0.95rem;
+      color: var(--neutral-600);
+      transition: color 0.2s ease;
+    }
+
+    .upload-status[data-variant="success"] {
+      color: var(--yellow-800);
+      font-weight: 600;
+    }
+
+    .upload-status[data-variant="error"] {
+      color: #a22121;
+      font-weight: 600;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+      grid-auto-rows: 1fr; /* ensure children stretch to available height */
+      gap: 1.4rem;
+      padding: 1.6rem 2rem 1.8rem;
+      background: rgba(255, 255, 255, 0.86);
+      flex: 1;
+      min-height: 0;
+    }
+
+    .form-panel,
+    .preview-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    form {
+      background: rgba(255, 255, 255, 0.94);
+      border-radius: 1.25rem;
+      padding: 1.6rem;
+      box-shadow: inset 0 0 0 1px rgba(122, 89, 0, 0.08);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.8rem 1.1rem;
+      height: 100%;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--neutral-800);
+      gap: 0.3rem;
+    }
+
+    .full-span {
+      grid-column: 1 / -1;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.68rem 0.8rem;
+      border-radius: 0.85rem;
+      border: 1px solid var(--border);
+      background: #fffdf5;
+      font-size: 0.95rem;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+      color: var(--neutral-950);
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--yellow-200);
+      box-shadow: 0 0 0 4px rgba(255, 212, 102, 0.38);
+    }
+
+    textarea {
+      min-height: 6rem;
+      resize: vertical;
+    }
+
+    .checkbox-field {
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .checkbox-field input {
+      width: auto;
+      margin: 0;
+      accent-color: var(--yellow-300);
+    }
+
+    button[type="submit"] {
+      grid-column: 1 / -1;
+      margin-top: 0.4rem;
+      padding: 0.95rem 1.2rem;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, var(--yellow-100), var(--yellow-300));
+      color: var(--neutral-950);
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button[type="submit"]:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(122, 89, 0, 0.2);
+    }
+
+    button[type="submit"]:active {
+      transform: translateY(1px);
+    }
+
+    .status {
+      margin-top: 1.2rem;
+      font-weight: 700;
+      color: var(--yellow-800);
+      background-color: rgba(255, 236, 179, 0.4);
+      border-radius: 0.9rem;
+      padding: 0.85rem 1rem;
+      box-shadow: inset 0 0 0 1px rgba(255, 196, 72, 0.35);
+    }
+
+    .preview-panel {
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 1.25rem;
+      box-shadow: inset 0 0 0 1px rgba(122, 89, 0, 0.08);
+      padding: 1.5rem 1.8rem;
+      gap: 0.9rem;
+      max-height: 100%;
+      height: 100%;
+      overflow: hidden; /* contain inner scroll */
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+    }
+
+    .preview-header h2 {
+      margin: 0;
+      font-size: 1.35rem;
+      letter-spacing: -0.01em;
+      color: var(--neutral-950);
+    }
+
+    .preview-meta {
+      font-size: 0.95rem;
+      color: var(--neutral-600);
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .preview-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .progress-panel {
+      margin-top: 1.2rem;
+      display: grid;
+      gap: 0.6rem;
+      background: rgba(255, 236, 179, 0.35);
+      border-radius: 0.9rem;
+      padding: 0.85rem 1rem 1rem;
+      box-shadow: inset 0 0 0 1px rgba(255, 196, 72, 0.28);
+    }
+
+    .progress-panel header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      color: var(--neutral-800);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 0.6rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.6);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar span {
+      position: absolute;
+      inset: 0;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(135deg, var(--yellow-100), var(--yellow-300));
+      transition: width 0.3s ease;
+    }
+
+    .table-wrapper {
+      border-radius: 1rem;
+      overflow-x: hidden;
+      box-shadow: inset 0 0 0 1px rgba(122, 89, 0, 0.08);
+      background: #fffef8;
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.9rem;
+    }
+
+    thead {
+      background: rgba(255, 221, 130, 0.45);
+      color: var(--neutral-950);
+    }
+
+    th,
+    td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(122, 89, 0, 0.08);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr {
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    tbody tr:hover {
+      background: rgba(255, 240, 180, 0.35);
+    }
+
+    .record-row.is-selected {
+      background: rgba(255, 221, 130, 0.45);
+    }
+
+    .record-row.is-saved {
+      position: relative;
+    }
+
+    .record-row.is-saved::after {
+      content: "저장됨";
+      position: absolute;
+      right: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(122, 89, 0, 0.14);
+      color: var(--yellow-800);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+    }
+
+    .record-empty td {
+      text-align: center;
+      color: var(--neutral-600);
+      padding: 1.9rem 1rem;
+      font-style: italic;
+    }
+
+    @media (max-width: 840px) {
+      body {
+        padding: 2rem 1rem;
+      }
+
+      header,
+      .upload-panel {
+        padding: 2rem 1.6rem;
+      }
+
+      .workspace {
+        padding: 1.8rem 1.6rem 2rem;
+        grid-template-columns: 1fr;
+      }
+
+      form {
+        padding: 1.8rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .preview-panel {
+        padding: 1.8rem;
+      }
+    }
+
+    @media (max-width: 720px) {
+      header,
+      .upload-panel {
+        padding: 1.6rem 1.2rem;
+      }
+
+      .workspace {
+        padding: 1.4rem 1.2rem 1.6rem;
+      }
+
+      form {
+        grid-template-columns: 1fr;
+      }
+
+      .preview-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>증상 자동입력 AI</h1>
+      <p>Acuzen | KR</p>
+    </header>
+    <section class="upload-panel">
+      <div class="upload-row">
+        <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="파일 업로드">
+          <div class="drop-zone-icon">📄</div>
+          <div class="drop-zone-text">
+            <strong>Excel 또는 CSV 파일을 드래그 앤 드롭하거나 클릭하여 선택하세요.</strong>
+            <span>첫 200건까지 미리보기 후 케이스를 선택해 자동 입력할 수 있습니다.</span>
+            <em>지원 형식: .xlsx, .xls, .csv</em>
+          </div>
+          <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" hidden />
+        </div>
+        <button id="autoFillBtn" type="button" class="auto-fill-btn" disabled>Auto Fill</button>
+      </div>
+      <div class="upload-status" id="uploadStatus" data-variant="info"></div>
+    </section>
+    <main class="workspace">
+      <section class="form-panel">
+        <form id="caseForm">
+          <label>Case ID <input id="caseId" required /></label>
+          <label>Reported Term <input name="reportedTerm" required /></label>
+          <label>MedDRA Level
+            <select id="meddraLevel">
+              <option value="LLT">LLT</option>
+              <option value="PT">PT</option>
+            </select>
+          </label>
+          <label>MedDRA Text <input name="meddraText" /></label>
+          <label>MedDRA Code <input name="meddraCode" /></label>
+          <label>MedDRA Version <input name="meddraVersion" value="MOCK-1.0" /></label>
+          <label>Onset Date <input name="onsetDate" type="date" /></label>
+          <label class="checkbox-field"><input name="serious" type="checkbox" /> Serious</label>
+          <label>Suspect Drug <input name="suspectDrug" /></label>
+          <label>Dose <input name="dose" /></label>
+          <label>Outcome
+            <select id="outcome">
+              <option value="Recovered">Recovered</option>
+              <option value="Recovering">Recovering</option>
+              <option value="Not recovered">Not recovered</option>
+              <option value="Unknown">Unknown</option>
+              <option value="Fatal">Fatal</option>
+            </select>
+          </label>
+          <label class="full-span">Narrative <textarea id="narrative" name="narrative"></textarea></label>
+          <button type="submit">증상 저장하기</button>
+        </form>
+        <div id="status" class="status" hidden>Saved!</div>
+      </section>
+      <section class="preview-panel">
+        <div class="preview-header">
+          <h2>저장된 케이스</h2>
+          <div class="preview-meta">
+            <span id="fileName">파일 없음</span>
+            <span>|</span>
+            <span id="recordCount">0건</span>
+          </div>
+        </div>
+        <div class="progress-panel" id="progressPanel" hidden>
+          <header>
+            <span>진행 상황</span>
+            <strong id="progressLabel">0 / 0</strong>
+          </header>
+          <div class="progress-bar"><span id="progressFill"></span></div>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Case ID</th>
+                <th>Reported Term</th>
+                <th>MedDRA Code</th>
+                <th>Outcome</th>
+                <th>Seriousness</th>
+              </tr>
+            </thead>
+            <tbody id="recordList">
+              <tr class="record-empty"><td colspan="5">업로드된 케이스가 없습니다.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const form = document.getElementById('caseForm');
+    const status = document.getElementById('status');
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const autoFillBtn = document.getElementById('autoFillBtn');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const recordList = document.getElementById('recordList');
+    const recordCount = document.getElementById('recordCount');
+    const fileNameDisplay = document.getElementById('fileName');
+    let lastSavedCaseId = null;
+    const progressPanel = document.getElementById('progressPanel');
+    const progressLabel = document.getElementById('progressLabel');
+    const progressFill = document.getElementById('progressFill');
+
+    const FIELD_MAPPING = {
+      case_id: '#caseId',
+      reaction_reported_term: 'input[name="reportedTerm"]',
+      meddra_level: '#meddraLevel',
+      meddra_term_text: 'input[name="meddraText"]',
+      meddra_code: 'input[name="meddraCode"]',
+      meddra_version: 'input[name="meddraVersion"]',
+      onset_date: 'input[name="onsetDate"]',
+      seriousness: 'input[name="serious"]',
+      suspect_drug: 'input[name="suspectDrug"]',
+      dose_text: 'input[name="dose"]',
+      outcome: '#outcome',
+      narrative: '#narrative',
+    };
+
+    let uploadedRecords = [];
+    let selectedIndex = -1;
+    let dbRecords = [];
+
+    function setUploadStatus(text, variant = 'info') {
+      uploadStatus.textContent = text;
+      uploadStatus.dataset.variant = variant;
+    }
+
+    function updateProgressBar() {
+      const total = uploadedRecords.length;
+      const saved = uploadedRecords.filter((record) => record._saved).length;
+      if (!total) {
+        progressPanel.hidden = true;
+        progressFill.style.width = '0%';
+        progressLabel.textContent = '0 / 0';
+        return;
+      }
+      progressPanel.hidden = false;
+      progressLabel.textContent = `${saved} / ${total}`;
+      const percent = Math.round((saved / total) * 100);
+      progressFill.style.width = `${percent}%`;
+    }
+
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('파일을 읽을 수 없습니다.'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleFile(file) {
+      if (!file) {
+        return;
+      }
+      dropZone.classList.add('is-loading');
+      setUploadStatus(`${file.name} 업로드 중...`);
+      try {
+        const base64 = await readFileAsBase64(file);
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ filename: file.name, content: base64 }),
+        });
+
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || '업로드 실패');
+        }
+
+        const data = await response.json();
+        uploadedRecords = (data.records || []).map((record) => ({ ...record, _saved: false }));
+        selectedIndex = uploadedRecords.length ? 0 : -1;
+        recordCount.textContent = `${uploadedRecords.length}건`;
+        fileNameDisplay.textContent = data.filename || file.name;
+        updateProgressBar();
+        autoFillBtn.disabled = uploadedRecords.length === 0;
+
+        if (uploadedRecords.length) {
+          setUploadStatus(`${data.filename || file.name}에서 ${uploadedRecords.length}건을 불러왔습니다.`, 'success');
+          selectRecord(0);
+        } else {
+          setUploadStatus('파일에서 케이스를 찾을 수 없습니다.', 'info');
+          clearForm();
+          updateProgressBar();
+        }
+      } catch (error) {
+        console.error(error);
+        setUploadStatus(`업로드 실패: ${error.message}`, 'error');
+        uploadedRecords = [];
+        selectedIndex = -1;
+        recordCount.textContent = '0건';
+        fileNameDisplay.textContent = '파일 없음';
+        clearForm();
+        updateProgressBar();
+      } finally {
+        await fetchDbRecords();
+        dropZone.classList.remove('is-loading');
+        dropZone.classList.remove('is-dragover');
+        fileInput.value = '';
+        autoFillBtn.disabled = uploadedRecords.length === 0;
+      }
+    }
+
+    function renderDbTable() {
+      recordList.innerHTML = '';
+      if (!dbRecords.length) {
+        const row = document.createElement('tr');
+        row.className = 'record-empty';
+        row.innerHTML = '<td colspan="5">저장된 케이스가 없습니다.</td>';
+        recordList.appendChild(row);
+        return;
+      }
+
+      dbRecords.forEach((record) => {
+        const row = document.createElement('tr');
+        row.className = 'record-row is-saved';
+        if (record.case_id === lastSavedCaseId) {
+          row.classList.add('is-selected');
+        }
+        row.innerHTML = `
+          <td>${record.case_id || '-'}</td>
+          <td>${record.reaction_reported_term || '-'}</td>
+          <td>${record.meddra_code || '-'}</td>
+          <td>${record.outcome || '-'}</td>
+          <td>${record.seriousness || '-'}</td>
+        `;
+        recordList.appendChild(row);
+      });
+    }
+
+    function updateRowSelection() {}
+
+    function ensureSelectOption(select, value) {
+      if (!value) {
+        return;
+      }
+      const exists = Array.from(select.options).some(
+        (option) => option.value === value || option.label === value
+      );
+      if (!exists) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        select.appendChild(option);
+      }
+      select.value = value;
+    }
+
+    function populateForm(record) {
+      if (!record) {
+        return;
+      }
+      Object.entries(FIELD_MAPPING).forEach(([field, selector]) => {
+        const element = document.querySelector(selector);
+        if (!element) {
+          return;
+        }
+        const value = record[field] ?? '';
+        if (selector === 'input[name="serious"]') {
+          element.checked = String(value).toLowerCase().startsWith('serious');
+          return;
+        }
+        if (element.tagName === 'SELECT') {
+          ensureSelectOption(element, value);
+          return;
+        }
+        if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+          element.value = value || '';
+        }
+      });
+      status.hidden = false;
+      status.textContent = `${record.case_id || '선택된 케이스'} 로드 완료`; 
+      status.style.color = 'var(--yellow-800)';
+    }
+
+    function clearForm() {
+      Object.values(FIELD_MAPPING).forEach((selector) => {
+        const element = document.querySelector(selector);
+        if (!element) {
+          return;
+        }
+        if (selector === 'input[name="serious"]') {
+          element.checked = false;
+          return;
+        }
+        if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+          element.value = '';
+        }
+        if (element instanceof HTMLSelectElement) {
+          element.selectedIndex = 0;
+        }
+      });
+      status.hidden = true;
+    }
+
+    function selectRecord(index) {
+      if (index < 0 || index >= uploadedRecords.length) {
+        return;
+      }
+      selectedIndex = index;
+      populateForm(uploadedRecords[index]);
+      updateRowSelection();
+    }
+
+    async function fetchDbRecords() {
+      try {
+        const response = await fetch('/api/cases');
+        if (!response.ok) {
+          throw new Error(await response.text());
+        }
+        dbRecords = await response.json();
+      } catch (error) {
+        console.error('Failed to load DB records', error);
+        dbRecords = [];
+      }
+      recordCount.textContent = `${dbRecords.length}건 저장됨`;
+      renderDbTable();
+    }
+
+    function selectNextRecord(currentIndex) {
+      const nextByOrder = uploadedRecords.findIndex((record, idx) => !record._saved && idx > currentIndex);
+      if (nextByOrder !== -1) {
+        selectRecord(nextByOrder);
+        return;
+      }
+      const firstPending = uploadedRecords.findIndex((record) => !record._saved);
+      if (firstPending !== -1) {
+        selectRecord(firstPending);
+      }
+    }
+
+    async function markRecordSubmitted(index) {
+      if (index < 0 || index >= uploadedRecords.length) {
+        return;
+      }
+      const record = uploadedRecords[index];
+      record._saved = true;
+      lastSavedCaseId = record.case_id || null;
+      updateRowSelection();
+      updateProgressBar();
+      await fetchDbRecords();
+      selectNextRecord(index);
+    }
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      dropZone.classList.add('is-dragover');
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('is-dragover');
+    });
+    dropZone.addEventListener('drop', (event) => {
+      event.preventDefault();
+      dropZone.classList.remove('is-dragover');
+      const files = event.dataTransfer?.files;
+      if (files && files.length) {
+        handleFile(files[0]);
+      }
+    });
+    fileInput.addEventListener('change', (event) => {
+      const target = event.target;
+      if (target.files && target.files.length) {
+        handleFile(target.files[0]);
+      }
+    });
+
+    function getSavedCount() {
+      const text = progressLabel.textContent || '';
+      const m = text.match(/(\d+)\s*\/\s*(\d+)/);
+      return m ? parseInt(m[1], 10) : uploadedRecords.filter(r => r._saved).length;
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function waitForSavedIncrement(prev, timeoutMs = 30000) {
+      const start = Date.now();
+      while (Date.now() - start < timeoutMs) {
+        const cur = getSavedCount();
+        if (cur > prev) return cur;
+        await sleep(150);
+      }
+      throw new Error('AutoFill timeout waiting for save');
+    }
+
+    async function autoFillAll() {
+      if (!uploadedRecords.length) return;
+      autoFillBtn.disabled = true;
+      dropZone.classList.add('is-loading');
+      try {
+        for (let i = 0; i < uploadedRecords.length; i += 1) {
+          if (uploadedRecords[i]._saved) continue;
+          selectRecord(i);
+          await sleep(150);
+          const before = getSavedCount();
+          form.requestSubmit();
+          await waitForSavedIncrement(before, 45000);
+        }
+      } catch (err) {
+        console.error('AutoFill error:', err);
+        setUploadStatus(`자동 입력 실패: ${err.message || err}`, 'error');
+      } finally {
+        dropZone.classList.remove('is-loading');
+        autoFillBtn.disabled = uploadedRecords.every(r => r._saved);
+      }
+    }
+
+    autoFillBtn.addEventListener('click', autoFillAll);
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      status.hidden = false;
+      status.textContent = 'Saving...';
+      status.style.color = 'var(--yellow-800)';
+
+      const formData = new FormData(form);
+      const rawPayload = Object.fromEntries(formData.entries());
+      rawPayload.case_id = document.getElementById('caseId').value;
+      rawPayload.meddraLevel = document.getElementById('meddraLevel').value;
+      rawPayload.outcome = document.getElementById('outcome').value;
+      rawPayload.serious = form.elements['serious'].checked;
+
+      const payload = {
+        case_id: rawPayload.case_id,
+        reaction_reported_term: rawPayload.reportedTerm || '',
+        meddra_level: rawPayload.meddraLevel || 'LLT',
+        meddra_term_text: rawPayload.meddraText || '',
+        meddra_code: rawPayload.meddraCode || '',
+        meddra_version: rawPayload.meddraVersion || '',
+        onset_date: rawPayload.onsetDate || '',
+        seriousness: rawPayload.serious ? 'Serious' : 'Non-serious',
+        suspect_drug: rawPayload.suspectDrug || '',
+        dose_text: rawPayload.dose || '',
+        outcome: rawPayload.outcome || '',
+        narrative: rawPayload.narrative || '',
+        raw_payload: rawPayload,
+      };
+
+      try {
+        const response = await fetch('/api/cases', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || 'Failed to save');
+        }
+
+        status.textContent = `Saved case ${payload.case_id}`;
+        status.style.color = 'var(--yellow-800)';
+        console.log('Saved:', await response.json().catch(() => ({ status: 'saved' })));
+        if (selectedIndex >= 0) {
+          await markRecordSubmitted(selectedIndex);
+        }
+      } catch (error) {
+        status.textContent = `Save failed: ${error.message}`;
+        status.style.color = '#a22121';
+      }
+    });
+
+    window.addEventListener('dragover', (event) => event.preventDefault());
+    window.addEventListener('drop', (event) => event.preventDefault());
+    (async () => {
+      try {
+        await fetch('/api/reset', { method: 'POST' });
+      } catch (e) {
+        console.warn('DB reset failed (test mode)', e);
+      } finally {
+        await fetchDbRecords();
+      }
+    })();
+  </script>
+</body>
+</html>

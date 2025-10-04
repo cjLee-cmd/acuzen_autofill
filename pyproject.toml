@@ -1,0 +1,27 @@
+[project]
+name = "meddra-autofill"
+version = "0.1.0"
+description = "Automation scaffolding for MedDRA UI data entry"
+readme = "agent.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Automation Team" }
+]
+dependencies = []
+
+[project.optional-dependencies]
+playwright = ["playwright>=1.44"]
+selenium = ["selenium>=4.18"]
+excel = ["openpyxl>=3.1"]
+
+[project.scripts]
+meddra-run = "scripts.run_batch:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 100
+
+[tool.isort]
+profile = "black"

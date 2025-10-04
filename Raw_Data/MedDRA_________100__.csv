@@ -1,0 +1,101 @@
+case_id,report_date,patient_age,sex,drug_name,indication,reaction_term,reaction_code,seriousness,onset_date,outcome
+CAS-2025-0001,2024-10-16,32,M,DrugC,Diabetes,Hyperglycemia,PT_45700,Non-serious,2024-10-03,Recovered
+CAS-2025-0002,2024-11-23,87,M,VaccineY,Infection,Rash,PT_29364,Non-serious,2024-09-29,Recovering
+CAS-2025-0003,2023-08-27,82,U,DrugA,Prophylaxis,Palpitations,PT_68343,Serious,2023-07-12,Unknown
+CAS-2025-0004,2024-08-26,53,M,DrugB,Unknown,Neutropenia,PT_10966,Serious,2024-07-14,Recovering
+CAS-2025-0005,2023-08-09,61,M,DrugA,Infection,Anxiety,PT_84439,Serious,2023-08-03,Not recovered
+CAS-2025-0006,2024-09-10,51,M,BiologicX,Prophylaxis,Hypotension,PT_14781,Serious,2024-07-17,Not recovered
+CAS-2025-0007,2025-04-29,64,U,DrugB,Unknown,Abdominal pain,PT_45371,Non-serious,2025-04-11,Recovering
+CAS-2025-0008,2025-03-02,55,M,DrugB,Hypertension,Erythema,PT_32551,Serious,2025-01-30,Not recovered
+CAS-2025-0009,2023-06-16,65,F,DrugB,Unknown,Chest pain,PT_37637,Non-serious,2023-05-25,Recovering
+CAS-2025-0010,2024-06-30,49,M,BiologicX,Infection,Chest pain,PT_37637,Non-serious,2024-06-13,Not recovered
+CAS-2025-0011,2025-05-13,25,M,DrugA,Pain,Hypokalemia,PT_35271,Serious,2025-03-18,Recovering
+CAS-2025-0012,2025-07-24,58,M,BiologicX,Infection,Medication error,PT_70617,Serious,2025-06-03,Not recovered
+CAS-2025-0013,2023-05-23,49,U,VaccineY,Prophylaxis,Anaphylactic reaction,PT_78461,Serious,2023-05-20,Unknown
+CAS-2025-0014,2024-01-06,46,M,VaccineY,Infection,Insomnia,PT_78884,Non-serious,2024-01-01,Recovered
+CAS-2025-0015,2023-06-06,38,U,BiologicX,Prophylaxis,Abdominal pain,PT_45371,Serious,2023-05-01,Unknown
+CAS-2025-0016,2024-06-25,50,U,DrugA,Unknown,Pneumonia,PT_99901,Non-serious,2024-06-08,Not recovered
+CAS-2025-0017,2025-02-26,61,M,DrugC,Infection,Asthenia,PT_52361,Serious,2024-12-28,Not recovered
+CAS-2025-0018,2025-09-22,82,M,VaccineY,Hypertension,Product quality issue,PT_75272,Serious,2025-09-15,Recovering
+CAS-2025-0019,2023-06-06,65,M,VaccineY,Prophylaxis,Headache,PT_14075,Serious,2023-05-08,Recovered
+CAS-2025-0020,2023-04-25,64,F,DrugB,Hypertension,Depression,PT_30448,Non-serious,2023-03-01,Unknown
+CAS-2025-0021,2025-04-15,26,U,DrugB,Diabetes,Drug interaction,PT_32242,Serious,2025-04-15,Recovering
+CAS-2025-0022,2023-09-29,85,U,BiologicX,Diabetes,Ligament sprain,PT_83699,Non-serious,2023-09-14,Not recovered
+CAS-2025-0023,2024-02-13,65,F,VaccineY,Infection,Hypotension,PT_14781,Non-serious,2023-12-29,Recovered
+CAS-2025-0024,2023-12-13,20,U,VaccineY,Diabetes,Gingival bleeding,PT_54137,Non-serious,2023-10-14,Recovered
+CAS-2025-0025,2024-12-25,25,M,DrugA,Hypertension,Tinnitus,PT_74119,Non-serious,2024-11-27,Recovering
+CAS-2025-0026,2023-10-13,80,M,VaccineY,Diabetes,Pneumonia,PT_99901,Serious,2023-08-29,Unknown
+CAS-2025-0027,2025-04-06,70,M,DrugA,Hypertension,Drug interaction,PT_32242,Serious,2025-02-27,Unknown
+CAS-2025-0028,2024-02-25,77,U,DrugA,Unknown,Off label use,PT_18413,Non-serious,2023-12-30,Unknown
+CAS-2025-0029,2025-01-15,61,M,DrugB,Diabetes,Dermatitis,PT_75672,Serious,2024-11-24,Unknown
+CAS-2025-0030,2023-07-07,53,F,DrugB,Hypertension,Urinary retention,PT_26955,Non-serious,2023-05-11,Recovered
+CAS-2025-0031,2025-09-19,29,M,DrugB,Infection,Agitation,PT_80003,Serious,2025-08-03,Unknown
+CAS-2025-0032,2025-07-13,25,M,BiologicX,Hypertension,Paresthesia,PT_35525,Serious,2025-07-12,Unknown
+CAS-2025-0033,2023-10-20,72,U,VaccineY,Unknown,Kidney failure,PT_38021,Serious,2023-08-30,Recovering
+CAS-2025-0034,2023-10-31,45,M,VaccineY,Unknown,Ligament sprain,PT_83699,Non-serious,2023-10-18,Not recovered
+CAS-2025-0035,2023-02-28,24,U,BiologicX,Prophylaxis,Pain in extremity,PT_56412,Non-serious,2023-01-02,Recovered
+CAS-2025-0036,2025-05-21,41,M,VaccineY,Hypertension,Therapeutic response unexpected,PT_80090,Non-serious,2025-04-16,Recovered
+CAS-2025-0037,2025-08-22,49,U,VaccineY,Hypertension,Hyperthermia,PT_75750,Non-serious,2025-07-19,Not recovered
+CAS-2025-0038,2025-08-15,51,M,DrugC,Diabetes,Anaphylactic reaction,PT_78461,Serious,2025-06-24,Not recovered
+CAS-2025-0039,2024-04-13,58,M,DrugA,Infection,Hyperthermia,PT_75750,Non-serious,2024-02-17,Recovering
+CAS-2025-0040,2024-06-02,51,M,DrugC,Hypertension,Epistaxis,PT_25494,Serious,2024-04-21,Recovering
+CAS-2025-0041,2024-03-24,87,U,DrugC,Prophylaxis,Off label use,PT_18413,Non-serious,2024-03-06,Not recovered
+CAS-2025-0042,2025-08-12,31,M,DrugC,Hypertension,Back pain,PT_92908,Non-serious,2025-06-30,Not recovered
+CAS-2025-0043,2024-09-11,44,U,DrugC,Diabetes,Dose omission,PT_27299,Serious,2024-08-14,Unknown
+CAS-2025-0044,2023-09-15,24,M,BiologicX,Pain,Pruritus,PT_65399,Non-serious,2023-08-07,Recovering
+CAS-2025-0045,2024-10-14,51,M,BiologicX,Prophylaxis,Liver disorder,PT_40981,Serious,2024-09-19,Recovered
+CAS-2025-0046,2023-04-25,27,U,DrugB,Prophylaxis,Rash,PT_29364,Serious,2023-04-02,Recovering
+CAS-2025-0047,2024-03-16,34,M,DrugC,Pain,Pruritus,PT_65399,Serious,2024-01-29,Recovering
+CAS-2025-0048,2024-11-13,31,F,VaccineY,Infection,Hyperthermia,PT_75750,Non-serious,2024-11-12,Recovering
+CAS-2025-0049,2025-06-04,38,M,BiologicX,Hypertension,Dry mouth,PT_14243,Serious,2025-05-25,Unknown
+CAS-2025-0050,2025-04-01,49,F,DrugB,Unknown,Back pain,PT_92908,Serious,2025-03-27,Recovered
+CAS-2025-0051,2025-05-29,78,M,DrugB,Infection,Hepatic enzyme increased,PT_92180,Serious,2025-05-21,Recovering
+CAS-2025-0052,2023-08-17,21,U,DrugB,Infection,Tinnitus,PT_74119,Serious,2023-08-12,Recovered
+CAS-2025-0053,2025-09-17,53,F,VaccineY,Infection,Therapeutic response unexpected,PT_80090,Serious,2025-09-17,Recovered
+CAS-2025-0054,2023-04-29,51,M,VaccineY,Pain,Rash,PT_29364,Non-serious,2023-04-07,Unknown
+CAS-2025-0055,2023-12-20,58,F,VaccineY,Prophylaxis,Hypertension,PT_68106,Serious,2023-12-17,Recovering
+CAS-2025-0056,2023-09-18,23,U,BiologicX,Hypertension,Night sweats,PT_65122,Non-serious,2023-08-12,Unknown
+CAS-2025-0057,2023-03-13,60,U,DrugC,Unknown,Hypotension,PT_14781,Serious,2023-02-13,Not recovered
+CAS-2025-0058,2024-11-13,70,F,BiologicX,Unknown,Somnolence,PT_25974,Non-serious,2024-09-26,Unknown
+CAS-2025-0059,2024-11-11,66,U,DrugB,Prophylaxis,Oral pain,PT_61870,Serious,2024-10-07,Recovered
+CAS-2025-0060,2023-11-08,54,M,BiologicX,Prophylaxis,Gastroesophageal reflux disease,PT_19150,Serious,2023-10-08,Unknown
+CAS-2025-0061,2024-03-28,45,U,BiologicX,Unknown,Pyrexia,PT_40792,Non-serious,2024-02-15,Not recovered
+CAS-2025-0062,2023-04-06,48,U,DrugC,Diabetes,Palpitations,PT_68343,Non-serious,2023-02-06,Recovered
+CAS-2025-0063,2023-09-08,78,U,DrugA,Infection,Leukopenia,PT_32385,Non-serious,2023-08-24,Unknown
+CAS-2025-0064,2024-05-21,69,M,DrugB,Unknown,Overdose,PT_95168,Non-serious,2024-05-18,Recovered
+CAS-2025-0065,2025-03-08,72,M,DrugB,Unknown,Night sweats,PT_65122,Serious,2025-01-10,Recovering
+CAS-2025-0066,2025-07-28,33,F,DrugB,Infection,Drug ineffective,PT_45896,Serious,2025-07-28,Unknown
+CAS-2025-0067,2024-09-19,82,F,VaccineY,Infection,Asthenia,PT_52361,Serious,2024-08-18,Not recovered
+CAS-2025-0068,2025-02-08,49,U,DrugC,Prophylaxis,Agitation,PT_80003,Non-serious,2024-12-27,Unknown
+CAS-2025-0069,2023-03-21,54,M,DrugC,Pain,Blurred vision,PT_45923,Non-serious,2023-01-28,Recovering
+CAS-2025-0070,2023-08-25,67,U,DrugB,Unknown,Peripheral edema,PT_49313,Non-serious,2023-07-22,Unknown
+CAS-2025-0071,2023-12-05,87,F,BiologicX,Hypertension,Oropharyngeal pain,PT_37503,Serious,2023-10-30,Recovered
+CAS-2025-0072,2025-05-27,66,F,DrugA,Pain,Syncope,PT_53934,Serious,2025-05-21,Unknown
+CAS-2025-0073,2024-07-05,87,U,DrugB,Infection,Hyperglycemia,PT_45700,Serious,2024-06-02,Unknown
+CAS-2025-0074,2023-01-30,67,F,BiologicX,Unknown,Pyrexia,PT_40792,Serious,2023-01-28,Recovering
+CAS-2025-0075,2024-09-29,86,M,BiologicX,Prophylaxis,Oral pain,PT_61870,Non-serious,2024-08-05,Unknown
+CAS-2025-0076,2023-05-19,77,M,DrugA,Pain,Erythema,PT_32551,Serious,2023-04-02,Unknown
+CAS-2025-0077,2023-12-01,61,F,DrugC,Infection,Urticaria,PT_29710,Non-serious,2023-11-01,Recovered
+CAS-2025-0078,2025-02-06,87,M,DrugC,Diabetes,Off label use,PT_18413,Non-serious,2025-01-26,Recovered
+CAS-2025-0079,2025-02-11,21,M,DrugB,Hypertension,Hyperthermia,PT_75750,Non-serious,2024-12-28,Recovering
+CAS-2025-0080,2024-04-29,32,U,DrugB,Infection,Exposure during pregnancy,PT_46469,Serious,2024-04-18,Not recovered
+CAS-2025-0081,2023-06-21,32,M,DrugC,Hypertension,Toothache,PT_57399,Non-serious,2023-06-20,Not recovered
+CAS-2025-0082,2024-08-12,66,F,DrugB,Hypertension,Gingival bleeding,PT_54137,Non-serious,2024-06-19,Not recovered
+CAS-2025-0083,2025-05-20,33,U,DrugA,Pain,Gait disturbance,PT_14211,Serious,2025-05-02,Not recovered
+CAS-2025-0084,2023-03-12,82,U,DrugC,Hypertension,Leukopenia,PT_32385,Serious,2023-01-17,Unknown
+CAS-2025-0085,2025-09-10,64,U,BiologicX,Unknown,Arthralgia,PT_92436,Serious,2025-07-23,Not recovered
+CAS-2025-0086,2024-09-22,86,F,BiologicX,Infection,COVID-19,PT_33349,Serious,2024-08-13,Recovering
+CAS-2025-0087,2025-04-30,29,F,BiologicX,Diabetes,Chills,PT_52461,Serious,2025-04-06,Unknown
+CAS-2025-0088,2023-12-11,21,F,DrugC,Diabetes,Agitation,PT_80003,Non-serious,2023-11-03,Not recovered
+CAS-2025-0089,2023-12-15,53,U,DrugC,Prophylaxis,Nausea,PT_66499,Non-serious,2023-10-21,Recovering
+CAS-2025-0090,2025-01-07,70,F,VaccineY,Diabetes,Overdose,PT_95168,Serious,2024-12-19,Unknown
+CAS-2025-0091,2024-04-03,20,M,DrugC,Diabetes,Hypokalemia,PT_35271,Non-serious,2024-02-22,Not recovered
+CAS-2025-0092,2024-04-29,88,U,DrugC,Infection,Injection site erythema,PT_48382,Serious,2024-03-22,Unknown
+CAS-2025-0093,2023-10-05,57,F,DrugB,Hypertension,Pneumonia,PT_99901,Non-serious,2023-08-26,Recovered
+CAS-2025-0094,2025-01-30,86,U,DrugB,Diabetes,Peripheral edema,PT_49313,Serious,2024-12-18,Not recovered
+CAS-2025-0095,2023-04-13,42,F,DrugB,Pain,Dry mouth,PT_14243,Serious,2023-02-12,Recovering
+CAS-2025-0096,2023-10-08,23,M,VaccineY,Pain,Exposure during pregnancy,PT_46469,Non-serious,2023-09-18,Unknown
+CAS-2025-0097,2023-04-16,19,U,DrugC,Infection,Hypersensitivity,PT_66324,Serious,2023-03-08,Recovering
+CAS-2025-0098,2025-09-15,24,F,BiologicX,Hypertension,Abdominal pain,PT_45371,Serious,2025-08-17,Recovered
+CAS-2025-0099,2024-08-13,24,M,DrugB,Prophylaxis,Syncope,PT_53934,Non-serious,2024-06-29,Recovered
+CAS-2025-0100,2024-07-25,71,U,VaccineY,Prophylaxis,Hyperglycemia,PT_45700,Serious,2024-06-23,Unknown
