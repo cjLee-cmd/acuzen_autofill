@@ -984,6 +984,74 @@
         await fetchDbRecords();
       }
     })();
+
+    // --- Demo loader (GitHub Pages without backend) -----------------------
+    function csvToRows(text) {
+      const lines = text.trim().split(/\r?\n/);
+      const header = lines.shift().split(',').map(h => h.trim());
+      return lines.map(line => {
+        const cells = line.split(',');
+        const obj = {};
+        header.forEach((h, i) => { obj[h] = (cells[i] || '').trim(); });
+        return obj;
+      });
+    }
+
+    function normalizeRowJS(row) {
+      const get = (...keys) => {
+        for (const k of keys) {
+          const v = row[k];
+          if (v) return String(v).trim();
+        }
+        return '';
+      };
+      const reaction = get('reaction_reported_term', 'reaction_term', 'reported_term');
+      return {
+        case_id: get('case_id'),
+        reaction_reported_term: reaction,
+        meddra_level: get('meddra_level') || 'PT',
+        meddra_term_text: get('meddra_term_text', 'meddra_text', 'reaction_term') || reaction,
+        meddra_code: get('meddra_code', 'reaction_code', 'llt_code', 'pt_code'),
+        meddra_version: get('meddra_version') || 'MOCK-1.0',
+        onset_date: get('onset_date', 'reaction_onset_date'),
+        seriousness: (get('seriousness', 'serious').toLowerCase().startsWith('serious') ? 'Serious' : (get('seriousness') || 'Non-serious')),
+        suspect_drug: get('suspect_drug', 'drug_name', 'medicinal_product'),
+        dose_text: get('dose_text', 'dose'),
+        outcome: get('outcome', 'reaction_outcome'),
+        narrative: get('narrative', 'case_narrative', 'summary', 'indication'),
+        raw_payload: row,
+        _saved: false,
+      };
+    }
+
+    async function loadDemoIfNeeded() {
+      const url = new URL(window.location.href);
+      const demo = url.searchParams.get('demo');
+      const hasBackend = !!API_BASE;
+      if (hasBackend) return; // real backend 사용 시 데모 불필요
+      if (!demo) return; // demo=1 지정 시에만 동작
+      try {
+        const demoUrl = new URL('../Raw_Data/MedDRA_________100__.csv', window.location.href).href;
+        const res = await fetch(demoUrl);
+        const csv = await res.text();
+        const rows = csvToRows(csv);
+        uploadedRecords = rows.map(normalizeRowJS);
+        selectedIndex = uploadedRecords.length ? 0 : -1;
+        recordCount.textContent = `${uploadedRecords.length}건`;
+        fileNameDisplay.textContent = 'MedDRA_100 (demo)';
+        updateProgressBar();
+        autoFillBtn.disabled = uploadedRecords.length === 0;
+        if (uploadedRecords.length) {
+          setUploadStatus(`데모 데이터 ${uploadedRecords.length}건 로드됨`, 'success');
+          selectRecord(0);
+        }
+      } catch (err) {
+        console.warn('Demo load failed', err);
+      }
+    }
+
+    // kick demo mode on Pages with ?demo=1
+    loadDemoIfNeeded();
   </script>
 </body>
 </html>
