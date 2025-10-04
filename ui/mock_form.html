@@ -1025,11 +1025,7 @@
     }
 
     async function loadDemoIfNeeded() {
-      const url = new URL(window.location.href);
-      const demo = url.searchParams.get('demo');
-      const hasBackend = !!API_BASE;
-      if (hasBackend) return; // real backend 사용 시 데모 불필요
-      if (!demo) return; // demo=1 지정 시에만 동작
+      // 항상 기본 테스트 파일을 업로드된 상태로 초기화
       try {
         const demoUrl = new URL('../Raw_Data/MedDRA_________100__.csv', window.location.href).href;
         const res = await fetch(demoUrl);
