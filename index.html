@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Redirecting…</title>
+  <meta http-equiv="refresh" content="0; url=ui/mock_form.html" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; }
+    .box { max-width: 640px; margin: 10vh auto; line-height: 1.6; }
+    a { color: #0b57d0; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Redirecting…</h1>
+    <p>이 페이지는 자동으로 <a href="ui/mock_form.html">UI 페이지</a>로 이동합니다.</p>
+    <p>자동 이동이 되지 않으면 위 링크를 클릭하세요.</p>
+  </div>
+  <script>
+    try { window.location.replace('ui/mock_form.html'); } catch (e) {}
+  </script>
+</body>
+</html>
+
